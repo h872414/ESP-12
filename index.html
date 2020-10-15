@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head> 
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- CSS only -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">          
+    <title>Weather Station</title>
+  </head>
+  <body class="bg-dark">
+    <div class="container">
+        <!--Navigation-->
+        <h1 class="text-center text-light p-5">Weather Station Test Project</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-4  m-2 text-center "><button id="index" class="btn btn-info btn-block">Main Page</button></div>
+            <div class="col-md-4 m-2 text-center "><button id="config" class="btn btn-info btn-block">Configuration</button></div>            
+        <!--/Navigation-->
+        <!--Content-->
+            <div id="content" class="container m-5">
+                  <div class="card-deck">
+                      <div class="card">                   
+                        <div class="card-body p-5 ">
+                          <h5 id="tempTitle" class="card-title text-center">Temperature</h5>
+                          <h5 class="card-title text-center my-5"><i class="fa fa-thermometer-three-quarters fa-5x text-danger"></i></h5>                  
+                          <p class="card-text text-center"><span id="temperature" class="h1">0</span><span id="metric" class="h1">&#176;C</span></p>
+                        </div>
+                      </div>
+                      <div class="card">
+                        <div class="card-body p-5">
+                          <h5 id="humTitle" class="card-title text-center">Humidity</h5>
+                          <h5 class="card-title text-center my-5"><i class="fa fa-tint fa-5x text-info"></i></h5> 
+                          <p class="card-text text-center"><span id="humidity" class="h1">0</span><span class="h1">%</span></p>
+                        </div>
+                      </div>
+                    </div>
+            </div>
+        <!--/Content-->    
+    </div>
+    <!--Footer-->
+    <div class="footer bg-light fixed-bottom">
+        <p class="text-center m-1">Weather Station for educational purposes</p>
+    </div>
+    <!--/Footer-->
+  </body>
+  <script src="https://use.fontawesome.com/86365c243a.js"></script>
+  <script>
+    /************ Initialize variables  ************/
+    const content = document.querySelector("#content");
+    let tempData = 0;
+    let humData = 0;
+    let state = "index";
+    let metric_state = "fahrenheit";
+    let language = false;
+
+    /************ Add event Listeners  ************/
+    document.querySelector('#config').addEventListener('click',()=>{
+      state = "config";
+      loadContent(state);
+    });
+
+    document.querySelector('#index').addEventListener('click',()=>{
+      state = "index";
+      loadContent(state);
+      getData(); 
+    });
+
+    /************ Refresh sensor data in every 2 seconds  ************/
+    getData(); 
+      setInterval(()=>{
+        if(state == "index"){
+          getData();
+        }
+      },2000);
+
+    /************ Ajax request for getting sensor data  ************/
+    function getData(){
+        fetch('http://192.168.0.229/getData')
+        .then(res => res.json())
+        .then(data =>{
+          tempData = data.temperature;
+          humData = data.humidity;
+            if(metric_state == "fahrenheit"){
+              temperature.textContent = tempData * (9/5) +32;
+              document.querySelector('#metric').textContent = "\u2109";
+            }else{
+              document.querySelector('#metric').textContent = "\u2103";
+              document.querySelector('#temperature').textContent = tempData;   
+            }     
+            document.querySelector('#humidity').textContent = humData;
+        })
+        .catch(err => console.log(err));     
+    }
+
+    /************ Ajax request for changing main content  ************/
+    function loadContent(state){     
+        fetch('http://192.168.0.229/'+state)
+        .then(res => res.text())
+        .then(data => {
+          content.innerHTML = data;
+          if(state == "config"){
+            document.querySelector('#celsius').addEventListener('click',()=>{
+            metric_state = "celsius";
+            });
+            document.querySelector('#fahrenheit').addEventListener('click',()=>{
+              metric_state = "fahrenheit";
+            });
+            document.querySelector('#hun').addEventListener('click',()=>{
+              language = true;
+              setLanguage(language);
+            });
+            document.querySelector('#eng').addEventListener('click',()=>{
+              language = false;
+              setLanguage(language);
+            });
+          }
+          setLanguage(language); 
+      })
+    }
+
+    /************ Change languange  ************/
+    function setLanguage(language){
+        if(language){
+            document.querySelector('#index').textContent = "Főoldal";
+            document.querySelector('#config').textContent = "Beállítások";
+          if(state == "index"){
+            document.querySelector('#tempTitle').textContent = "Hőmérséklet";
+            document.querySelector('#humTitle').textContent = "Páratartalom";
+          }else{
+            document.querySelector('#langTitle').textContent = "Nyelv";
+            document.querySelector('#metricTitle').textContent = "Mértékegység";
+            document.querySelector('#hun').textContent = "Magyar";
+            document.querySelector('#eng').textContent = "Angol";
+          }    
+        }else{
+          document.querySelector('#langTitle').textContent = "Language";
+            document.querySelector('#metricTitle').textContent = "Metric";
+            document.querySelector('#hun').textContent = "Hungarian";
+            document.querySelector('#eng').textContent = "English";
+        }
+    }
+  </script>
+</html>
